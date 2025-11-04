@@ -492,17 +492,31 @@ i18n.enableFallback = true;
 i18n.defaultLocale = fallbackLocale;
 
 export const getBestLocale = (deviceLocales) => {
-  const preferredCodes = (deviceLocales || [])
-    .map((locale) => locale?.languageCode)
-    .filter(Boolean);
-  const supportedCodes = supportedLocales.map((entry) => entry.code);
-  const match = preferredCodes.find((code) => supportedCodes.includes(code));
-  return match || fallbackLocale;
+  const supportedCodes = new Set(supportedLocales.map((entry) => entry.code));
+  if (deviceLocales && deviceLocales.length > 0) {
+    for (const locale of deviceLocales) {
+      const tag = locale?.languageTag?.toLowerCase();
+      if (tag) {
+        const base = tag.split(/[-_]/)[0];
+        if (base && supportedCodes.has(base)) {
+          return base;
+        }
+      }
+    }
+    for (const locale of deviceLocales) {
+      const code = locale?.languageCode?.toLowerCase();
+      if (code && supportedCodes.has(code)) {
+        return code;
+      }
+    }
+  }
+  return fallbackLocale;
 };
 
 export const setLocale = (code) => {
-  i18n.locale = supportedLocales.some((entry) => entry.code === code)
-    ? code
+  const normalized = typeof code === "string" ? code.toLowerCase() : "";
+  i18n.locale = supportedLocales.some((entry) => entry.code === normalized)
+    ? normalized
     : fallbackLocale;
   return i18n.locale;
 };
